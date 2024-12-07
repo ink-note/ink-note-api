@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MfaType {
+  TOTP
+  EMAIL
+  BACKUP_CODES
+  NONE
+}
+
+model User {
+  id String @id @default(cuid())
+
+  firstName               String? @map("first_name")
+  lastName                String? @map("last_name")
+  fullName                String? @map("full_name")
+  imageUrl                String? @map("image_url") @db.Text
+  email                   String  @unique
+  password                String? @db.Text
+  hasVerifiedEmailAddress Boolean @default(false) @map("has_verified_email_address")
+
+  lastSignInAt DateTime? @map("last_sign_in_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  sessions Session[]
+  mfa      Mfa[]
+}
+
+model Session {
+  id String @id @default(cuid())
+
+  fingerprintId   String @map("fingerprint_id")
+  fingerprintData String @map("fingerprint_data") @db.Text
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([fingerprintId])
+}
+
+model Mfa {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type         MfaType  @default(NONE)
+  enabled      Boolean  @default(false)
+  secret       String?  @db.Text
+  friendlyName String   @map("friendly_name") @db.Text
+  qrCodeUrl    String?  @map("qr_code_url") @db.Text
+  backupCodes  String[] @default([]) @map("backup_codes")
+
+  enabledAt DateTime? @map("enabled_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@index([userId])
+}

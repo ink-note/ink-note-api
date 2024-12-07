@@ -1,0 +1,33 @@
+version: 4.12.0
+
+services:
+  database:
+    container_name: database
+    image: postgres:16.2-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    ports:
+      - ${POSTGRES_PORT}:${POSTGRES_PORT}
+  redis:
+    container_name: cache
+    image: redis:7.2.4-alpine
+    restart: always
+    environment:
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_DATABASES: ${REDIS_DATABASES}
+    ports:
+      - '${REDIS_PORT}:${REDIS_PORT}'
+    volumes:
+      - redis:/data
+      - redis-config:/usr/local/etc/redis/redis.conf
+    command: redis-server --loglevel warning
+volumes:
+  dbdata:
+  redis:
+  redis-config:
