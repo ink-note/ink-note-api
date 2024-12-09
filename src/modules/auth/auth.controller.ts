@@ -1,14 +1,17 @@
-import { Body, Controller, Post, Res } from '@nestjs/common';
+import { Body, Controller, Get, Post, Res } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiBody, ApiOperation } from '@nestjs/swagger';
 import { SignInDto, SignUpDto } from './dtos';
 import { FingerPrint, Fingerprint } from '@dilanjer/fingerprint';
-import { IssueTokens } from './types';
 import { COOKIES } from '@/shared/constants/enums/cookies';
 import { ms } from '@/shared/utils/ms';
 import { Response } from 'express';
 import { ResponseWrapper } from '@/shared/utils/response-wrapper';
 import { MESSAGES } from '@/shared/constants/messages/en-EN';
+import { IssueTokens } from './session/types';
+import { AuthGuard } from '@/common/guards/auth';
+import { CurrentUser } from '@/common/decorators/Current-user';
+import { CurrentUserSession } from './strategies/types';
 
 @Controller('auth')
 export class AuthController {
@@ -36,22 +39,30 @@ export class AuthController {
     return new ResponseWrapper({ message: MESSAGES.SUCCESS.EMAIL_SENT, data: userProfile });
   }
 
-  private setTokensCookies(res: Response, cookies: IssueTokens) {
-    const { access_token, refresh_token } = cookies;
+  @AuthGuard('session')
+  @Get('logout')
+  async logout(@CurrentUser() user: CurrentUserSession, @Res({ passthrough: true }) res: Response) {
+    const message = await this.authService.logout(user);
+    this.removeTokensCookies(res);
+    return new ResponseWrapper(message);
+  }
+
+  private setTokensCookies(res: Response, tokens: IssueTokens) {
+    const { access_token, session_token } = tokens;
 
     res.cookie(COOKIES.ACCESS_TOKEN, access_token, {
       sameSite: 'lax',
       maxAge: ms(COOKIES.ACCESS_TOKEN_DURATION),
     });
-    res.cookie(COOKIES.REFRESH_TOKEN, refresh_token, {
+    res.cookie(COOKIES.SESSION_TOKEN, session_token, {
       httpOnly: true,
       sameSite: 'lax',
-      maxAge: ms(COOKIES.REFRESH_TOKEN_DURATION),
+      maxAge: ms(COOKIES.SESSION_TOKEN_DURATION),
     });
   }
 
   private removeTokensCookies(res: Response) {
     res.clearCookie(COOKIES.ACCESS_TOKEN);
-    res.clearCookie(COOKIES.REFRESH_TOKEN);
+    res.clearCookie(COOKIES.SESSION_TOKEN);
   }
 }

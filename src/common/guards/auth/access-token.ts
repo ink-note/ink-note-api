@@ -1,8 +1,7 @@
 import { ExecutionContext, Injectable } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Reflector } from '@nestjs/core';
-
-import { ROUTE_METADATA_KEYS } from '../../../shared/constants/enums/route-metadata-keys';
+import { ROUTE_METADATA_KEYS } from '@/shared/constants/enums/route-metadata-keys';
 
 @Injectable()
 export class AccessTokenGuard extends AuthGuard('jwt') {
@@ -11,10 +10,10 @@ export class AccessTokenGuard extends AuthGuard('jwt') {
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const isPublic = this.reflector.getAllAndOverride<boolean>(
-      ROUTE_METADATA_KEYS.IS_PUBLIC_ROUTE,
-      [context.getHandler(), context.getClass()],
-    );
+    const isPublic = this.reflector.getAllAndOverride<boolean>(ROUTE_METADATA_KEYS.IS_PUBLIC_ROUTE, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
     if (isPublic) {
       return true;
     }

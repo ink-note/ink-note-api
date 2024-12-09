@@ -1,9 +1,5 @@
 import { UserProfile } from '@/common/types';
-
-export interface IssueTokens {
-  access_token: string;
-  refresh_token: string;
-}
+import { IssueTokens } from './session/types';
 
 export interface ReturnSignUpData {
   tokens: IssueTokens;

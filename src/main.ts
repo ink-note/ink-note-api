@@ -10,8 +10,8 @@ import { AppModule } from './app.module';
 async function bootstrap(): Promise<string> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const config = app.get(ConfigService<EnvironmentVariables>);
-  const _IS_DEV_ = config.get<string>('NODE_ENV') === 'development';
-  const _IS_PROD_ = config.get<string>('NODE_ENV') === 'production';
+  const _IS_DEV_ = config.getOrThrow<string>('NODE_ENV') === 'development';
+  const _IS_PROD_ = config.getOrThrow<string>('NODE_ENV') === 'production';
 
   app.setGlobalPrefix('api');
   app.enableCors({
@@ -33,7 +33,7 @@ async function bootstrap(): Promise<string> {
     SwaggerInitializer('api/docs', app);
   }
   app.enableShutdownHooks();
-  await app.listen(parseInt(config.get<string>('PORT')) || 8000);
+  await app.listen(parseInt(config.getOrThrow<string>('PORT')) || 8000);
   return app.getUrl();
 }
 

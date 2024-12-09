@@ -16,18 +16,10 @@ export class MfaService {
     private readonly sessionService: SessionService,
   ) {}
 
-  create() {}
-
-  update() {}
-
-  delete() {}
+  enable() {}
 
   async findMany(mfaWhereInput: Prisma.MfaFindManyArgs): Promise<MfaEntity[] | null> {
     return nullIfEmpty(await this.prisma.mfa.findMany(mfaWhereInput));
-  }
-
-  async findOne(mfaWhereUniqueInput: Prisma.MfaWhereUniqueInput) {
-    return await this.prisma.mfa.findUnique({ where: mfaWhereUniqueInput });
   }
 
   createTemporaryToken() {

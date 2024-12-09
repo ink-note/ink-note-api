@@ -5,9 +5,9 @@ type EnvironmentVariables = {
 
   // Jwt
   JWT_ACCESS_TOKEN_SECRET: string;
-  JWT_REFRESH_TOKEN_SECRET: string;
+  JWT_SESSION_TOKEN_SECRET: string;
   JWT_ACCESS_TOKEN_EXPIRES_IN: string;
-  JWT_REFRESH_TOKEN_EXPIRES_IN: string;
+  JWT_SESSION_TOKEN_EXPIRES_IN: string;
   TWO_FACTOR_AUTHENTICATION_APP_NAME: string;
 
   // Github

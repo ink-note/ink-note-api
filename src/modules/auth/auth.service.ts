@@ -8,6 +8,7 @@ import { SessionService } from './session';
 import { ReturnSignUpData } from './types';
 import { nanoid } from 'nanoid';
 import { MfaService } from './mfa/mfa.service';
+import { CurrentUserSession } from './strategies/types';
 
 @Injectable()
 export class AuthService {
@@ -61,7 +62,7 @@ export class AuthService {
     const encryptedPassword = await hash(password, 8);
     const user = await this.userService.create({ password: encryptedPassword, email, ...rest });
 
-    const tokens = await this.sessionService.createTokensAndSession({ fingerprint, user });
+    const tokens = await this.sessionService.createTokensAndSession({ fingerprint, user, isFirstSession: true });
 
     const emailConfirmationToken = nanoid(64);
 
@@ -77,7 +78,17 @@ export class AuthService {
     return { tokens, userProfile };
   }
 
-  logout() {}
+  async logout({ user, session }: CurrentUserSession): Promise<string> {
+    const currentSession = await this.sessionService.delete({ id: session.id, userId: user.id });
+
+    if (currentSession === null) {
+      throw new BadRequestException(MESSAGES.AUTH.SESSION_ERROR);
+    }
+
+    return MESSAGES.AUTH.LOGOUT_SUCCESS;
+  }
+
+  logoutAllDevices() {}
 
   refresh() {}
 }

@@ -1,11 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/common/services/prisma';
-import { CreateSessionInput } from './types';
+import { AccessTokenPayload, CreateSessionInput, IssueTokens, SessionTokenPayload } from './types';
 import { SessionEntity, UserEntity } from '@/common/types';
 import { FingerPrint } from '@dilanjer/fingerprint';
-import { IssueTokens } from '../types';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class SessionService {
@@ -16,11 +16,19 @@ export class SessionService {
     private readonly configService: ConfigService<EnvironmentVariables>,
   ) {}
 
-  async createTokensAndSession({ fingerprint, user }: CreateSessionInput): Promise<IssueTokens> {
-    const session = await this.findOneOrCreate({ fingerprint, user });
+  async createTokensAndSession({ fingerprint, user, isFirstSession }: CreateSessionInput): Promise<IssueTokens> {
+    const session = isFirstSession ? await this.create({ fingerprint, user }) : await this.findOneOrCreate({ fingerprint, user });
     const tokens = this.createTokens(user, session, fingerprint);
 
     return tokens;
+  }
+
+  async findOne(sessionWhereUniqueInput: Prisma.SessionWhereUniqueInput) {
+    return await this.prisma.session.findUnique({ where: sessionWhereUniqueInput });
+  }
+
+  async delete(sessionWhereUniqueInput: Prisma.SessionWhereUniqueInput): Promise<SessionEntity | null> {
+    return await this.prisma.session.delete({ where: sessionWhereUniqueInput }).catch(() => null);
   }
 
   private async create({ fingerprint, user }: CreateSessionInput): Promise<SessionEntity> {
@@ -57,29 +65,29 @@ export class SessionService {
   }
 
   private createTokens(user: UserEntity, session: SessionEntity, fingerprint: FingerPrint): IssueTokens {
-    const accessPayload = {
+    const accessPayload: AccessTokenPayload = {
       id: user.id,
       email: user.email,
     };
 
-    const refreshPayload = {
+    const sessionPayload: SessionTokenPayload = {
       fpId: fingerprint.id,
       usId: user.id,
       seId: session.id,
     };
 
     const access_token = this.jwtService.sign(accessPayload, {
-      secret: this.configService.get<string>('JWT_ACCESS_TOKEN_SECRET'),
-      expiresIn: this.configService.get<string>('JWT_ACCESS_TOKEN_EXPIRES_IN'),
+      secret: this.configService.getOrThrow<string>('JWT_ACCESS_TOKEN_SECRET'),
+      expiresIn: this.configService.getOrThrow<string>('JWT_ACCESS_TOKEN_EXPIRES_IN'),
     });
 
-    const refresh_token = this.jwtService.sign(refreshPayload, {
-      secret: this.configService.get<string>('JWT_REFRESH_TOKEN_SECRET'),
-      expiresIn: this.configService.get<string>('JWT_REFRESH_TOKEN_EXPIRES_IN'),
+    const session_token = this.jwtService.sign(sessionPayload, {
+      secret: this.configService.getOrThrow<string>('JWT_SESSION_TOKEN_SECRET'),
+      expiresIn: this.configService.getOrThrow<string>('JWT_SESSION_TOKEN_EXPIRES_IN'),
     });
 
     return {
-      refresh_token,
+      session_token,
       access_token,
     };
   }
