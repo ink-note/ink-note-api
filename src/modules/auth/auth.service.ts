@@ -5,14 +5,15 @@ import { UserService } from '../user/user.service';
 import { MESSAGES } from '@/shared/constants/messages/en-EN';
 import { compare, hash } from 'bcrypt';
 import { SessionService } from './session';
-import { ReturnSignUpData } from './types';
+import { CurrentUserSession, ReturnSignUpData } from './types';
 import { nanoid } from 'nanoid';
-import { MfaService } from './mfa/mfa.service';
-import { CurrentUserSession } from './strategies/types';
+import { MfaService } from '../mfa/mfa.service';
+import { ERROR_TAG } from '@/shared/constants/enums/error-tags';
 
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly mfaService: MfaService,
     private readonly userService: UserService,
@@ -31,14 +32,13 @@ export class AuthService {
 
     if (mfaOptions) {
       const mfaPublicData = await Promise.all(mfaOptions.map((mfa) => this.mfaService.getMfaPublicData(mfa)));
-      const mfaTemporaryToken = this.mfaService.createTemporaryToken();
-
-      // TODO: save mfaToken to cache
+      const mfaTemporaryToken = await this.mfaService.createTemporaryToken({ email: user.email });
 
       this.logger.debug({
-        message: MESSAGES.MFA.MFA_ENABLED,
+        message: MESSAGES.MFA.REQUIRED,
+        error_tag: ERROR_TAG.MFA_REQUIRED,
         email,
-        mfaTemporarySessionToken: mfaTemporaryToken,
+        mfaTemporaryToken: mfaTemporaryToken,
       });
 
       return { mfaPublicData, mfaTemporaryToken };

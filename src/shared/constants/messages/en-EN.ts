@@ -24,13 +24,14 @@ export const MESSAGES = {
     CONFIRMATION_TOKEN_NOT_FOUND: 'The token associated with this data could not be located.',
   },
   MFA: {
-    MFA_ENABLED: 'Two-Factor Authentication (2FA) is now active.',
-    MFA_DISABLED: 'Two-Factor Authentication (2FA) has been disabled.',
-    MFA_ALREADY_ENABLED: 'Two-Factor Authentication is already enabled.',
-    MFA_DISABLED_CURRENTLY: 'Two-Factor Authentication is currently disabled.',
-    MFA_INCORRECT_TOTP: 'The OTP is incorrect or expired. Please try again.',
-    MFA_INCORRECT_BACKUP_CODE: 'The Backup Code is incorrect. Please verify and try again.',
-    MFA_SESSION_NOT_FOUND: 'Unable to find MFA session. Please log in again.',
+    ENABLED: 'Two-Factor Authentication (2FA) is now active.',
+    DISABLED: 'Two-Factor Authentication (2FA) has been disabled.',
+    ALREADY_ENABLED: 'Two-Factor Authentication is already enabled.',
+    DISABLED_CURRENTLY: 'Two-Factor Authentication is currently disabled.',
+    INCORRECT_TOTP: 'The OTP is incorrect or expired. Please try again.',
+    INCORRECT_BACKUP_CODE: 'The Backup Code is incorrect. Please verify and try again.',
+    SESSION_NOT_FOUND: 'Unable to find MFA session. Please log in again.',
+    REQUIRED: 'Two-Factor Authentication is required. Please complete the verification process.',
   },
 
   LOGGER: {

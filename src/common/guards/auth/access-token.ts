@@ -17,7 +17,6 @@ export class AccessTokenGuard extends AuthGuard('jwt') {
     if (isPublic) {
       return true;
     }
-
     const activate = (await super.canActivate(context)) as boolean;
 
     return activate;
