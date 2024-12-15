@@ -1,11 +1,11 @@
 meta {
-  name: Sign-In
+  name: Sign In
   type: http
   seq: 1
 }
 
 post {
-  url: {{dev_url}}/auth/signin
+  url: {{url}}/auth/signin
   body: json
   auth: none
 }
@@ -15,12 +15,4 @@ body:json {
     "email": "john.doe@example.com",
     "password": "password123"
   }
-}
-
-body:form-urlencoded {
-  email: {{email}}
-}
-
-script:post-response {
-  console.log(res)
 }

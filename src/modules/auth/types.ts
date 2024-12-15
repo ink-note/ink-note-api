@@ -6,8 +6,8 @@ export interface ReturnSignUpData {
   userProfile: UserProfile;
 }
 
-export interface CurrentUserSession {
+export interface UserSessionType {
   user: UserEntity;
   session: SessionEntity;
 }
-export interface CurrentUserType extends AccessTokenPayload {}
+export interface UserType extends AccessTokenPayload {}

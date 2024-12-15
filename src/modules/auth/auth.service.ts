@@ -5,9 +5,9 @@ import { UserService } from '../user/user.service';
 import { MESSAGES } from '@/shared/constants/messages/en-EN';
 import { compare, hash } from 'bcrypt';
 import { SessionService } from './session';
-import { CurrentUserSession, ReturnSignUpData } from './types';
+import { UserSessionType, ReturnSignUpData } from './types';
 import { nanoid } from 'nanoid';
-import { MfaService } from '../mfa/mfa.service';
+import { MfaService } from './mfa/mfa.service';
 import { ERROR_TAG } from '@/shared/constants/enums/error-tags';
 
 @Injectable()
@@ -78,7 +78,7 @@ export class AuthService {
     return { tokens, userProfile };
   }
 
-  async logout({ user, session }: CurrentUserSession): Promise<string> {
+  async logout({ user, session }: UserSessionType): Promise<string> {
     const currentSession = await this.sessionService.delete({ id: session.id, userId: user.id });
 
     if (currentSession === null) {
@@ -87,8 +87,4 @@ export class AuthService {
 
     return MESSAGES.AUTH.LOGOUT_SUCCESS;
   }
-
-  logoutAllDevices() {}
-
-  refresh() {}
 }

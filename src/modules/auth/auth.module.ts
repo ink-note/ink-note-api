@@ -4,7 +4,7 @@ import { AuthController } from './auth.controller';
 import { UserModule } from '../user/user.module';
 import { SessionModule } from './session';
 import { AccessTokenStrategy, SessionTokenStrategy } from './strategies';
-import { MfaModule } from '../mfa/mfa.module';
+import { MfaModule } from './mfa/mfa.module';
 
 @Module({
   imports: [UserModule, SessionModule, MfaModule],

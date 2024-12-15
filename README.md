@@ -26,3 +26,5 @@
 ### auth
 
 - create tokens refresh
+- refactor session module [X]
+- refactor auth module

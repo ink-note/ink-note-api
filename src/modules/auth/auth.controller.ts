@@ -4,14 +4,14 @@ import { ApiBody, ApiOperation } from '@nestjs/swagger';
 import { SignInDto, SignUpDto } from './dtos';
 import { FingerPrint, Fingerprint } from '@dilanjer/fingerprint';
 import { COOKIES } from '@/shared/constants/enums/cookies';
-import { toMs } from 'ms-typescript';
 import { Response } from 'express';
 import { ResponseWrapper } from '@/shared/utils/response-wrapper';
 import { MESSAGES } from '@/shared/constants/messages/en-EN';
 import { IssueTokens } from './session/types';
 import { AuthGuard } from '@/common/guards/auth';
-import { CurrentUser } from '@/common/decorators/Current-user';
-import { CurrentUserSession } from './types';
+import { UserSessionType } from './types';
+import { User } from '@/common/decorators/User';
+import { DURATIONS } from '@/shared/constants/enums/durations';
 
 @Controller('auth')
 export class AuthController {
@@ -27,7 +27,7 @@ export class AuthController {
       res.cookie('2fa-token', mfaTemporaryToken, {
         httpOnly: true,
         sameSite: 'lax',
-        maxAge: toMs(COOKIES.SESSION_TOKEN_DURATION),
+        maxAge: DURATIONS.SESSION_TOKEN_DURATION,
       });
       return new ResponseWrapper({ data: { mfaPublicData, mfaTemporaryToken } });
     }
@@ -48,9 +48,9 @@ export class AuthController {
     return new ResponseWrapper({ message: MESSAGES.SUCCESS.EMAIL_SENT, data: userProfile });
   }
 
-  @AuthGuard('session')
+  @AuthGuard()
   @Get('logout')
-  async logout(@CurrentUser() user: CurrentUserSession, @Res({ passthrough: true }) res: Response) {
+  async logout(@User() user: UserSessionType, @Res({ passthrough: true }) res: Response) {
     const message = await this.authService.logout(user);
     this.removeTokensCookies(res);
     return new ResponseWrapper(message);
@@ -61,12 +61,12 @@ export class AuthController {
 
     res.cookie(COOKIES.ACCESS_TOKEN, access_token, {
       sameSite: 'lax',
-      maxAge: toMs(COOKIES.ACCESS_TOKEN_DURATION),
+      maxAge: DURATIONS.ACCESS_TOKEN_DURATION,
     });
     res.cookie(COOKIES.SESSION_TOKEN, session_token, {
       httpOnly: true,
       sameSite: 'lax',
-      maxAge: toMs(COOKIES.SESSION_TOKEN_DURATION),
+      maxAge: DURATIONS.SESSION_TOKEN_DURATION,
     });
   }
 

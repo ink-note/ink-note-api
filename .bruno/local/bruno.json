@@ -1,6 +1,6 @@
 {
   "version": "1",
-  "name": "Ink Note DEV",
+  "name": "Ink Note Local (DEV)",
   "type": "collection",
   "ignore": [
     "node_modules",

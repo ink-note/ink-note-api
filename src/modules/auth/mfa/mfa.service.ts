@@ -6,7 +6,6 @@ import { nanoid } from 'nanoid';
 import { UserService } from '@/modules/user/user.service';
 import { nullIfEmpty } from '@/shared/utils/array';
 import {
-  CreateTemporaryMfaInput,
   CreateTemporaryTokenInput,
   GenerateMfaCacheKey,
   TemporaryMfaInCache,
@@ -16,9 +15,9 @@ import {
 import { CacheService } from '@/common/services/cache';
 import { toMs } from 'ms-typescript';
 import { createId } from '@paralleldrive/cuid2';
-import { MfaKeyGenerationResponse, totpUtils } from '@/shared/utils/totp';
+import { totpUtils } from '@/shared/utils/totp';
 import { ConfigService } from '@nestjs/config';
-import { CurrentUserType } from '../auth/types';
+import { UserType } from '../types';
 import { VerifyEnrollDto } from './dtos/Verify-enroll.dto';
 import { MESSAGES } from '@/shared/constants/messages/en-EN';
 
@@ -45,7 +44,7 @@ export class MfaService {
     return token;
   }
 
-  async createTemporary(currentUser: CurrentUserType) {
+  async createTemporary(user: UserType) {
     const totpCount = await this.prisma.mfa.count({
       where: {
         type: 'TOTP',
@@ -59,7 +58,7 @@ export class MfaService {
     const id = createId();
     const mfaTOTP = await totpUtils.generateMfaDetails(
       this.configService.get<string>('TWO_FACTOR_AUTHENTICATION_APP_NAME'),
-      currentUser.email,
+      user.email,
       10,
     );
 
@@ -72,11 +71,11 @@ export class MfaService {
     };
   }
 
-  async verifyEnroll(currentUserType: CurrentUserType, data: VerifyEnrollDto) {
+  async verifyEnroll(user: UserType, data: VerifyEnrollDto) {
     const { code, friendlyName, id } = data;
 
     const mfa = await this.cacheService.get<TemporaryMfaInCache>(this.generateMfaCacheKey({ tempMfaId: id }));
-    const mfaOptions = await this.findMany({ where: { userId: currentUserType.id } });
+    const mfaOptions = await this.findMany({ where: { userId: user.id } });
 
     if (!mfa) {
       throw new BadRequestException(MESSAGES.MFA.SESSION_NOT_FOUND);
@@ -99,7 +98,7 @@ export class MfaService {
         enabledAt: new Date(),
         user: {
           connect: {
-            id: currentUserType.id,
+            id: user.id,
           },
         },
       },
@@ -114,7 +113,7 @@ export class MfaService {
           enabledAt: new Date(),
           user: {
             connect: {
-              id: currentUserType.id,
+              id: user.id,
             },
           },
         },

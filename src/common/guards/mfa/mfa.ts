@@ -1,4 +1,4 @@
-import { MfaService } from '@/modules/mfa/mfa.service';
+import { MfaService } from '@/modules/auth/mfa/mfa.service';
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Request } from 'express';
 

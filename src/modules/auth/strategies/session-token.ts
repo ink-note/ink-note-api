@@ -8,7 +8,7 @@ import { Request } from 'express';
 import { UserService } from '@/modules/user/user.service';
 import { COOKIES } from '@/shared/constants/enums/cookies';
 import { SessionTokenPayload } from '../session/types';
-import { CurrentUserSession } from '../types';
+import { UserSessionType } from '../types';
 
 @Injectable()
 export class SessionTokenStrategy extends PassportStrategy(Strategy, 'jwt-session') {
@@ -35,7 +35,7 @@ export class SessionTokenStrategy extends PassportStrategy(Strategy, 'jwt-sessio
     return token;
   }
 
-  async validate(req: Request, { usId, seId, fpId }: SessionTokenPayload): Promise<CurrentUserSession> {
+  async validate(req: Request, { usId, seId, fpId }: SessionTokenPayload): Promise<UserSessionType> {
     const _fpId = req.cookies[COOKIES.FINGERPRINT_ID];
 
     if (_fpId !== fpId) {
