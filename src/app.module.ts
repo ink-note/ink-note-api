@@ -11,6 +11,7 @@ import { PrismaModule } from './common/services/prisma';
 import { CacheModule } from './common/services/cache';
 import './shared/constants/enums/durations';
 import { DURATIONS } from './shared/constants/enums/durations';
+import { KernelModule } from './kernel/kernel.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { DURATIONS } from './shared/constants/enums/durations';
     UserModule,
     PrismaModule,
     CacheModule,
+    KernelModule,
   ],
   providers: [
     {

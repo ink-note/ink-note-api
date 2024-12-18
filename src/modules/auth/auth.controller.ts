@@ -12,14 +12,15 @@ import { AuthGuard } from '@/common/guards/auth';
 import { UserSessionType } from './types';
 import { User } from '@/common/decorators/User';
 import { DURATIONS } from '@/shared/constants/enums/durations';
+import { ROUTES } from '@/common/constants/routes';
 
-@Controller('auth')
+@Controller(ROUTES.AUTH.BASE)
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @ApiOperation({ summary: 'Sign in user', description: 'Endpoint to sign in a user.' })
   @ApiBody({ type: SignInDto, description: 'User credentials for signing in.' })
-  @Post('signin')
+  @Post(ROUTES.AUTH.SIGN_IN)
   async signIn(@Body() data: SignInDto, @Fingerprint() fingerprint: FingerPrint, @Res({ passthrough: true }) res: Response) {
     const { tokens, userProfile, mfaPublicData, mfaTemporaryToken } = await this.authService.signIn(data, fingerprint);
 
@@ -39,7 +40,7 @@ export class AuthController {
 
   @ApiOperation({ summary: 'Sign up user', description: 'Endpoint to sign up a new user.' })
   @ApiBody({ type: SignUpDto, description: 'User details for signing up.' })
-  @Post('signup')
+  @Post(ROUTES.AUTH.SIGN_UP)
   async signUp(@Body() data: SignUpDto, @Fingerprint() fingerprint: FingerPrint, @Res({ passthrough: true }) res: Response) {
     const { tokens, userProfile } = await this.authService.signUp(data, fingerprint);
 
@@ -49,7 +50,7 @@ export class AuthController {
   }
 
   @AuthGuard()
-  @Get('logout')
+  @Get(ROUTES.AUTH.LOGOUT)
   async logout(@User() user: UserSessionType, @Res({ passthrough: true }) res: Response) {
     const message = await this.authService.logout(user);
     this.removeTokensCookies(res);

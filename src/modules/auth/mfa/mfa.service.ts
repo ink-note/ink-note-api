@@ -32,11 +32,11 @@ export class MfaService {
     private readonly configService: ConfigService,
   ) {}
 
-  async findMany(mfaFindManyInput: MfaFindManyInput): Promise<MfaEntity[] | null> {
+  async findManyMfaEntries(mfaFindManyInput: MfaFindManyInput): Promise<MfaEntity[] | null> {
     return nullIfEmpty(await this.prisma.mfa.findMany(mfaFindManyInput));
   }
 
-  async createTemporaryToken(userUniqueInput: CreateTemporaryTokenInput) {
+  async createTemporaryMfaToken(userUniqueInput: CreateTemporaryTokenInput): Promise<string> {
     const token = nanoid(64);
 
     await this.cacheService.set(this.generateMfaCacheKey(userUniqueInput), token, toMs('5m'));
@@ -44,15 +44,13 @@ export class MfaService {
     return token;
   }
 
-  async createTemporary(user: UserType) {
+  async createTemporaryMfa(user: UserType): Promise<{ mfaSettingsId: string; authCode: string; qrCode: string }> {
     const totpCount = await this.prisma.mfa.count({
-      where: {
-        type: 'TOTP',
-      },
+      where: { type: 'TOTP', userId: user.id },
     });
 
-    if (totpCount >= 2) {
-      throw new BadRequestException('totp limit');
+    if (totpCount > 2) {
+      throw new BadRequestException('TOTP limit exceeded');
     }
 
     const id = createId();
@@ -62,7 +60,11 @@ export class MfaService {
       10,
     );
 
-    await this.cacheService.set<TemporaryMfaInCache>(this.generateMfaCacheKey({ tempMfaId: id }), { id, totp: mfaTOTP }, '10m');
+    await this.cacheService.set<TemporaryMfaInCache>(
+      this.generateMfaCacheKey({ tempMfaId: id }),
+      { id, totp: mfaTOTP },
+      toMs('10m'),
+    );
 
     return {
       mfaSettingsId: id,
@@ -71,18 +73,17 @@ export class MfaService {
     };
   }
 
-  async verifyEnroll(user: UserType, data: VerifyEnrollDto) {
+  async verifyEnrollMfa(user: UserType, data: VerifyEnrollDto): Promise<boolean> {
     const { code, friendlyName, id } = data;
 
     const mfa = await this.cacheService.get<TemporaryMfaInCache>(this.generateMfaCacheKey({ tempMfaId: id }));
-    const mfaOptions = await this.findMany({ where: { userId: user.id } });
 
     if (!mfa) {
-      throw new BadRequestException(MESSAGES.MFA.SESSION_NOT_FOUND);
+      throw new BadRequestException('MFA session not found');
     }
 
     if (!totpUtils.verifyOtpToken(code, mfa.totp.secretKey)) {
-      throw new BadRequestException(MESSAGES.MFA.INCORRECT_TOTP);
+      throw new BadRequestException('Incorrect TOTP');
     }
 
     await this.cacheService.del(this.generateMfaCacheKey({ tempMfaId: id }));
@@ -96,26 +97,20 @@ export class MfaService {
         secret: mfa.totp.secretKey,
         type: 'TOTP',
         enabledAt: new Date(),
-        user: {
-          connect: {
-            id: user.id,
-          },
-        },
+        user: { connect: { id: user.id } },
       },
     });
 
-    if (mfaOptions === null || !mfaOptions?.some((mfa) => mfa.type === 'BACKUP_CODES')) {
+    const mfaOptions = await this.findManyMfaEntries({ where: { userId: user.id } });
+
+    if (!mfaOptions || !mfaOptions.some((option) => option.type === 'BACKUP_CODES')) {
       await this.prisma.mfa.create({
         data: {
           friendlyName: 'BACKUP_CODES',
           enabled: true,
           type: 'BACKUP_CODES',
           enabledAt: new Date(),
-          user: {
-            connect: {
-              id: user.id,
-            },
-          },
+          user: { connect: { id: user.id } },
         },
       });
     }

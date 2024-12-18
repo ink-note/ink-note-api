@@ -28,11 +28,11 @@ export class AuthService {
       throw new BadRequestException(MESSAGES.AUTH.INVALID_CREDENTIALS);
     }
 
-    const mfaOptions = await this.mfaService.findMany({ where: { userId: user.id } });
+    const mfaOptions = await this.mfaService.findManyMfaEntries({ where: { userId: user.id } });
 
     if (mfaOptions) {
       const mfaPublicData = await Promise.all(mfaOptions.map((mfa) => this.mfaService.getMfaPublicData(mfa)));
-      const mfaTemporaryToken = await this.mfaService.createTemporaryToken({ email: user.email });
+      const mfaTemporaryToken = await this.mfaService.createTemporaryMfaToken({ email: user.email });
 
       this.logger.debug({
         message: MESSAGES.MFA.REQUIRED,
@@ -49,6 +49,10 @@ export class AuthService {
     const userProfile = this.userService.getUserPublicData(user);
     return { tokens, userProfile };
   }
+
+  async signInWithMfa() {}
+
+  async signInWithBackupCode() {}
 
   async signUp(data: SignUpDto, fingerprint: FingerPrint): Promise<ReturnSignUpData> {
     const { email, password, ...rest } = data;

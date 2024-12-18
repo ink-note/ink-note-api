@@ -4,22 +4,21 @@ import { ConfigService } from '@nestjs/config';
 import * as cookieParser from 'cookie-parser';
 import { NestFactory } from '@nestjs/core';
 
-import { SwaggerInitializer } from './swagger';
+import { SwaggerInitializer } from './common/configs/swagger-init';
 import { AppModule } from './app.module';
+
+import { corsDevOptions, corsProdOptions } from './common/configs/cors-options';
+import { ROUTES } from './common/constants/routes';
 
 async function bootstrap(): Promise<string> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const config = app.get(ConfigService<EnvironmentVariables>);
-  const _IS_DEV_ = config.getOrThrow<string>('NODE_ENV') === 'development';
-  const _IS_PROD_ = config.getOrThrow<string>('NODE_ENV') === 'production';
+
+  const NODE_ENV = config.getOrThrow<string>('NODE_ENV');
+  const _IS_DEV_ = NODE_ENV === 'development';
 
   app.setGlobalPrefix('api');
-  app.enableCors({
-    origin: true,
-    methods: 'GET,HEAD,POST,OPTIONS',
-    allowedHeaders: ['Accept', 'Authorization', 'Content-Type', 'X-Requested-With'],
-    credentials: true,
-  });
+  app.enableCors(_IS_DEV_ ? corsDevOptions : corsProdOptions);
 
   app.use(cookieParser());
   app.useGlobalPipes(
@@ -30,7 +29,7 @@ async function bootstrap(): Promise<string> {
   );
 
   if (_IS_DEV_) {
-    SwaggerInitializer('api/docs', app);
+    SwaggerInitializer(ROUTES.API.DOCS, app);
   }
   app.enableShutdownHooks();
   await app.listen(parseInt(config.getOrThrow<string>('PORT')) || 8000);
@@ -41,7 +40,7 @@ async function bootstrap(): Promise<string> {
   try {
     const url = await bootstrap();
     Logger.log('Server started', url + '/api');
-    Logger.log('Swagger started (running only in development)', url + '/api/docs');
+    Logger.log('Swagger started (running only in development)', url + `/${ROUTES.API.DOCS}`);
   } catch (error) {
     Logger.error('Server start error: ', error);
   }

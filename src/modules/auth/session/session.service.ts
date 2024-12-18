@@ -46,7 +46,7 @@ export class SessionService {
         fingerprintId,
         fingerprintData,
         user: { connect: { id: user.id } },
-        expiresAt: DURATIONS.SESSION_ENTITY_DURATION,
+        expiresAt: DURATIONS.SESSION_ENTITY_DURATION_ISO,
       },
     });
   }
