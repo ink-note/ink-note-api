@@ -4,10 +4,10 @@ import { ConfigService } from '@nestjs/config';
 import * as cookieParser from 'cookie-parser';
 import { NestFactory } from '@nestjs/core';
 
-import { SwaggerInitializer } from './common/configs/swagger-init';
+import { SwaggerInitializer } from './configs/swagger-init';
 import { AppModule } from './app.module';
 
-import { corsDevOptions, corsProdOptions } from './common/configs/cors-options';
+import { corsDevOptions, corsProdOptions } from './configs/cors-options';
 import { ROUTES } from './common/constants/routes';
 
 async function bootstrap(): Promise<string> {
@@ -40,7 +40,7 @@ async function bootstrap(): Promise<string> {
   try {
     const url = await bootstrap();
     Logger.log('Server started', url + '/api');
-    Logger.log('Swagger started (running only in development)', url + `/${ROUTES.API.DOCS}`);
+    Logger.log('Swagger started (running only in development)', url + `${ROUTES.API.DOCS}`);
   } catch (error) {
     Logger.error('Server start error: ', error);
   }

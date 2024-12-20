@@ -8,4 +8,15 @@ export interface UserProfile
   extends Pick<User, 'firstName' | 'fullName' | 'imageUrl' | 'lastName' | 'id' | 'hasVerifiedEmailAddress' | 'email'> {}
 
 export interface MfaData extends Pick<Mfa, 'enabled' | 'friendlyName' | 'type' | 'id' | 'createdAt'> {}
-export interface MfaTemporary extends Pick<Mfa, 'id' | 'secret' | 'qrCodeUrl'> {}
+
+export interface MfaTemporary extends Pick<Mfa, 'id' | 'secret'> {
+  qrCodeUrl: string;
+}
+
+export interface CacheOperationsOptions {
+  getInCache?: boolean;
+  saveToCache?: boolean;
+  clearCacheBeforeGet?: boolean;
+  deleteFromCacheAfterRead?: boolean;
+  cacheTTL?: number;
+}

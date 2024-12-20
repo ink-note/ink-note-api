@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { SessionService } from './session.service';
-
-import { TokensModule } from '../tokens/tokens.module';
-import { CacheModule } from '../cache/cache.module';
+import { CacheModule } from '@/common/services/cache';
+import { TokensUtilModule } from '../tokens-util/tokens-util.module';
 
 @Module({
-  imports: [TokensModule, CacheModule],
+  imports: [TokensUtilModule, CacheModule],
   providers: [SessionService],
+  exports: [SessionService],
 })
 export class SessionModule {}

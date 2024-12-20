@@ -4,149 +4,74 @@ import { FingerPrint } from '@dilanjer/fingerprint';
 import { PrismaService } from '@/common/services/prisma';
 import {
   CreateSessionInput,
-  FindFirstWithIdAndUserIdInput,
-  FindOneWithIdInput,
+  FindFirstByIdAndUserIdInput,
+  FindOneByIdInput,
   FingerprintData,
   SessionCacheOperationsOptions,
 } from './types';
-import { DURATIONS } from '../constants/durations';
-import { CacheService } from '../cache/cache.service';
 import { SessionEntity } from '../types';
+import { CacheService } from '@/common/services/cache';
+import { SESSION_ENTITY_CACHE_TTL, SESSION_ENTITY_DURATION_ISO } from './constants';
+import { EntityBase } from '../entity-base.service';
 
 @Injectable()
-export class SessionService {
+export class SessionService extends EntityBase {
   private readonly logger = new Logger(SessionService.name);
 
   constructor(
     private readonly prismaService: PrismaService,
-    private readonly cacheService: CacheService,
-  ) {}
+    readonly cacheService: CacheService,
+  ) {
+    super(cacheService);
+  }
 
-  public async findOneWithId(
-    { id }: FindOneWithIdInput,
-    options: SessionCacheOperationsOptions = {},
-  ): Promise<SessionEntity | null> {
-    const {
-      getInCache = true,
-      saveToCache = true,
-      clearCacheBeforeGet,
-      deleteFromCacheAfterRead,
-      cacheTTL = DURATIONS.ENTITIES.SESSION_ENTITY_CACHE_TTL,
-    } = options;
+  public async findOneById({ id }: FindOneByIdInput, options: SessionCacheOperationsOptions = {}): Promise<SessionEntity | null> {
+    const currentOptions = this.processOptions({ ...options, cacheTTL: SESSION_ENTITY_CACHE_TTL });
 
     const cacheKey = this.generateCacheKey(id);
 
-    // Log the start of the process
     this.logger.log(`Finding session with ID: ${id}, Cache Key: ${cacheKey}`);
 
-    if (clearCacheBeforeGet) {
-      this.logger.log(`Clearing cache before fetching session: ${cacheKey}`);
-      await this.cacheService.del(cacheKey);
-    }
+    return this.handleCache<SessionEntity | null>(cacheKey, currentOptions, async () => {
+      this.logger.log(`Fetching session from database for ID: ${id}`);
+      const session = await this.prismaService.session.findUnique({ where: { id } });
 
-    if (getInCache) {
-      this.logger.log(`Checking cache for session: ${cacheKey}`);
-      const cachedSession = await this.cacheService.get<SessionEntity | null>(cacheKey);
-
-      if (cachedSession) {
-        this.logger.log(`Found session in cache: ${cacheKey}`);
-
-        if (deleteFromCacheAfterRead) {
-          this.logger.log(`Deleting session from cache after reading: ${cacheKey}`);
-          await this.cacheService.del(cacheKey);
-        }
-
-        return cachedSession;
-      } else {
-        this.logger.log(`No session found in cache for: ${cacheKey}`);
+      if (!session) {
+        this.logger.warn(`Session with ID: ${id} not found in database.`);
+        return null;
       }
-    }
 
-    // Log when fetching from the database
-    this.logger.log(`Fetching session from database for ID: ${id}`);
-    const session = await this.prismaService.session.findUnique({ where: { id } });
-
-    if (session) {
-      this.logger.log(`Session found in database. ${saveToCache ? 'Saving to cache' : 'Not saving to cache'}`);
-
-      if (saveToCache) {
-        this.logger.log(`Saving session to cache: ${cacheKey}`);
-        await this.cacheService.set(cacheKey, session, cacheTTL);
-      }
-    } else {
-      this.logger.warn(`Session with ID: ${id} not found in database.`);
-    }
-
-    return session;
+      return session;
+    });
   }
 
-  public async findFirstWithIdAndUserId(
-    { id, userId }: FindFirstWithIdAndUserIdInput,
+  public async findFirstByIdAndUserId(
+    { id, userId }: FindFirstByIdAndUserIdInput,
     options: SessionCacheOperationsOptions = {},
   ): Promise<SessionEntity | null> {
-    const {
-      getInCache = true,
-      saveToCache = true,
-      clearCacheBeforeGet,
-      deleteFromCacheAfterRead,
-      cacheTTL = DURATIONS.ENTITIES.SESSION_ENTITY_CACHE_TTL,
-    } = options;
+    const currentOptions = this.processOptions({ ...options, cacheTTL: SESSION_ENTITY_CACHE_TTL });
 
     const cacheKey = this.generateCacheKey(id);
 
-    // Start of the process
     this.logger.log(`Starting session lookup. ID: ${id}, User ID: ${userId}, Cache Key: ${cacheKey}`);
 
-    // Clearing cache if requested
-    if (clearCacheBeforeGet) {
-      this.logger.log(`Clearing cache before fetching session. Cache Key: ${cacheKey}`);
-      await this.cacheService.del(cacheKey);
-    }
+    return this.handleCache(cacheKey, currentOptions, async () => {
+      this.logger.log(`Session not found in cache. Fetching from database. ID: ${id}, User ID: ${userId}`);
+      const session = await this.prismaService.session.findFirst({ where: { id, userId } });
 
-    let session = null;
-
-    // Attempt to get session from cache
-    if (getInCache) {
-      this.logger.log(`Checking cache for session. Cache Key: ${cacheKey}`);
-      session = await this.cacheService.get<SessionEntity | null>(cacheKey);
-
-      if (session) {
-        this.logger.log(`Session found in cache. Cache Key: ${cacheKey}`);
-
-        // Deleting from cache after read if requested
-        if (deleteFromCacheAfterRead) {
-          this.logger.log(`Deleting session from cache after reading. Cache Key: ${cacheKey}`);
-          await this.cacheService.del(cacheKey);
-        }
-
-        return session;
-      } else {
-        this.logger.log(`No session found in cache. Cache Key: ${cacheKey}`);
+      if (!session) {
+        this.logger.log(`Session not found in cache. Fetching from database. ID: ${id}, User ID: ${userId}`);
+        return null;
       }
-    }
 
-    // If session not found in cache, fetch from database
-    this.logger.log(`Session not found in cache. Fetching from database. ID: ${id}, User ID: ${userId}`);
-    session = await this.prismaService.session.findFirst({ where: { id, userId } });
-
-    if (session) {
-      this.logger.log(`Session found in database. ${saveToCache ? 'Saving to cache.' : 'Not saving to cache.'}`);
-
-      if (saveToCache) {
-        this.logger.log(`Saving session to cache. Cache Key: ${cacheKey}`);
-        await this.cacheService.set(cacheKey, session, cacheTTL);
-      }
-    } else {
-      this.logger.warn(`No session found in database. ID: ${id}, User ID: ${userId}`);
-    }
-
-    return session;
+      return session;
+    });
   }
 
-  public async deleteOneWithId(id: string): Promise<boolean> {
+  public async deleteOneById(id: string): Promise<boolean> {
     const cacheKey = this.generateCacheKey(id);
 
-    this.logger.log(`Attempting to delete session with ID: ${id}, Cache Key: ${cacheKey}`);
+    this.logger.log(`Attempting to delete session By ID: ${id}, Cache Key: ${cacheKey}`);
 
     try {
       // Deleting session from the database
@@ -172,7 +97,7 @@ export class SessionService {
       return await this.create({ fingerprint, user });
     }
 
-    let session = await this.findFirstWithIdAndUserId({ id: fingerprint.id, userId: user.id });
+    let session = await this.findFirstByIdAndUserId({ id: fingerprint.id, userId: user.id });
 
     if (!session) {
       session = await this.create({ fingerprint, user });
@@ -195,7 +120,7 @@ export class SessionService {
           fingerprintId,
           fingerprintData,
           user: { connect: { id: user.id } },
-          expiresAt: DURATIONS.ENTITIES.SESSION_ENTITY_DURATION_ISO,
+          expiresAt: SESSION_ENTITY_DURATION_ISO,
         },
       });
 
@@ -216,6 +141,6 @@ export class SessionService {
   }
 
   private generateCacheKey(id: string): string {
-    return this.cacheService.generateKey('session', 'cache', id);
+    return this.getCacheKey('session', 'cache', id);
   }
 }

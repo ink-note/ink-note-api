@@ -3,13 +3,11 @@ import { KernelService } from './kernel.service';
 import { UserModule } from './user/user.module';
 import { SessionModule } from './session/session.module';
 import { MfaModule } from './mfa/mfa.module';
-import { TotpModule } from './totp/totp.module';
-import { CacheModule } from './cache/cache.module';
-import { TokensModule } from './tokens/tokens.module';
-import { AuthCoreModule } from './auth-core/auth-core.module';
+import { TotpUtilModule } from './totp-util/totp-util.module';
+import { TokensUtilModule } from './tokens-util/tokens-util.module';
 
 @Module({
   providers: [KernelService],
-  imports: [UserModule, SessionModule, MfaModule, TotpModule, CacheModule, TokensModule, AuthCoreModule],
+  imports: [UserModule, SessionModule, MfaModule, TokensUtilModule, TotpUtilModule, TokensUtilModule],
 })
 export class KernelModule {}

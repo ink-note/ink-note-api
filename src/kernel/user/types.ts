@@ -1,23 +1,18 @@
 import { Prisma } from '@prisma/client';
+import { CacheOperationsOptions } from '../types';
 
 export interface CreateUserInput extends Prisma.UserCreateInput {}
 
-export interface FindOneWithIdInput extends Pick<Prisma.UserWhereUniqueInput, 'id'> {}
-export interface FindOneWithEmailInput extends Pick<Prisma.UserWhereUniqueInput, 'email'> {}
-export interface DeleteOneWithIdInput extends Pick<Prisma.UserWhereUniqueInput, 'id'> {}
+export interface FindOneByIdInput extends Pick<Prisma.UserWhereUniqueInput, 'id'> {}
+export interface FindOneByEmailInput extends Pick<Prisma.UserWhereUniqueInput, 'email'> {}
+export interface DeleteOneByIdInput extends Pick<Prisma.UserWhereUniqueInput, 'id'> {}
 
-export interface UpdateOneWithIdInput extends Pick<Prisma.UserWhereUniqueInput, 'id'> {}
-export interface UpdateOneWithDataInput extends Prisma.UserUpdateInput {}
+export interface UpdateOneByIdInput extends Pick<Prisma.UserWhereUniqueInput, 'id'> {}
+export interface UpdateOneByDataInput extends Prisma.UserUpdateInput {}
 
 export interface ValidatingUserInput {
   email: string;
   password: string;
 }
 
-export interface UserCacheOperationsOptions {
-  getInCache?: boolean;
-  saveToCache?: boolean;
-  clearCacheBeforeGet?: boolean;
-  deleteFromCacheAfterRead?: boolean;
-  cacheTTL?: number;
-}
+export interface UserCacheOperationsOptions extends CacheOperationsOptions {}

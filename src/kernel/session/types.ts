@@ -1,5 +1,5 @@
 import { FingerPrint } from '@dilanjer/fingerprint';
-import { UserEntity } from '../types';
+import { CacheOperationsOptions, UserEntity } from '../types';
 import { Prisma } from '@prisma/client';
 
 export interface CreateSessionInput {
@@ -13,13 +13,7 @@ export interface FingerprintData {
   fingerprintData: string;
 }
 
-export interface FindOneWithIdInput extends Pick<Prisma.SessionWhereUniqueInput, 'id'> {}
-export interface FindFirstWithIdAndUserIdInput extends Pick<Prisma.SessionWhereUniqueInput, 'id' | 'userId'> {}
+export interface FindOneByIdInput extends Pick<Prisma.SessionWhereUniqueInput, 'id'> {}
+export interface FindFirstByIdAndUserIdInput extends Pick<Prisma.SessionWhereUniqueInput, 'id' | 'userId'> {}
 
-export interface SessionCacheOperationsOptions {
-  getInCache?: boolean;
-  saveToCache?: boolean;
-  clearCacheBeforeGet?: boolean;
-  deleteFromCacheAfterRead?: boolean;
-  cacheTTL?: number;
-}
+export interface SessionCacheOperationsOptions extends CacheOperationsOptions {}

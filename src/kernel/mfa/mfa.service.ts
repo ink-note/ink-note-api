@@ -1,22 +1,21 @@
 import { Injectable } from '@nestjs/common';
-import { UserService } from '../user/user.service';
 import { PrismaService } from '@/common/services/prisma';
-import { CacheService } from '../cache/cache.service';
+import { CacheService } from '@/common/services/cache';
+import { FindManyByUserId } from './types';
+import { EntityBase } from '../entity-base.service';
 
 @Injectable()
-export class MfaService {
+export class MfaService extends EntityBase {
   constructor(
     private readonly prismaService: PrismaService,
-    private readonly cacheService: CacheService,
-    private readonly userService: UserService,
-  ) {}
+    readonly cacheService: CacheService,
+  ) {
+    super(cacheService);
+  }
 
-  async create() {}
-  async update() {}
-  async delete() {}
+  findManyByUserId({ userId }: FindManyByUserId) {}
 
-  async createTemporaryTOTP() {}
-  async verifyTOTP() {}
-  async verifyEnrollTOTP() {}
-  async findManyWithUserIdTOTP() {}
+  private generateCacheKey(id: string): string {
+    return this.cacheService.generateKey('mfa', 'cache', id);
+  }
 }

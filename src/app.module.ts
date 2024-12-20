@@ -4,14 +4,13 @@ import { ConfigModule } from '@nestjs/config';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { PassportModule } from '@nestjs/passport';
-import { AuthModule } from './modules/auth/auth.module';
-import { UserModule } from './modules/user/user.module';
-import { COOKIES } from './shared/constants/enums/cookies';
 import { PrismaModule } from './common/services/prisma';
 import { CacheModule } from './common/services/cache';
-import './shared/constants/enums/durations';
-import { DURATIONS } from './shared/constants/enums/durations';
 import { KernelModule } from './kernel/kernel.module';
+import { getFingerprintConfig } from './configs/fingerprint-config';
+import { getThrottlerConfig } from './configs/throttler-config';
+import { AuthModule } from './modules/auth/auth.module';
+import { ProfileModule } from './modules/profile/profile.module';
 
 @Module({
   imports: [
@@ -19,24 +18,13 @@ import { KernelModule } from './kernel/kernel.module';
       session: false,
     }),
     ConfigModule.forRoot({ isGlobal: true }),
-    FingerprintModule.forRoot({
-      params: ['headers', 'userAgent', 'ipAddress', 'location'],
-      cookieOptions: {
-        name: COOKIES.FINGERPRINT_ID,
-        httpOnly: true,
-      },
-    }),
-    ThrottlerModule.forRoot([
-      {
-        ttl: DURATIONS.RATE_LIMIT_DURATION,
-        limit: 60,
-      },
-    ]),
-    AuthModule,
-    UserModule,
+    FingerprintModule.forRoot(getFingerprintConfig()),
+    ThrottlerModule.forRoot(getThrottlerConfig()),
     PrismaModule,
     CacheModule,
     KernelModule,
+    AuthModule,
+    ProfileModule,
   ],
   providers: [
     {

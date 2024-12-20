@@ -11,10 +11,12 @@ export class CacheService {
 
   async set<K = unknown>(key: string, value: K, ttl?: string | number): Promise<boolean> {
     try {
-      await this.cacheManager.set(key, value, toMs(ttl));
+      const ttlMs = typeof ttl === 'string' ? toMs(ttl) : ttl;
+      await this.cacheManager.set(key, value, ttlMs);
       return true;
     } catch (error) {
       this.logger.error('Error setting value in cache:', error);
+      return false;
     }
   }
 
@@ -23,30 +25,44 @@ export class CacheService {
       return await this.cacheManager.get<T>(key);
     } catch (error) {
       this.logger.error(`Error getting value from cache for key "${key}":`, error);
+      return undefined;
     }
   }
 
-  async del(key: string): Promise<void> {
+  async del(key: string): Promise<boolean> {
     try {
       await this.cacheManager.del(key);
+      return true;
     } catch (error) {
       this.logger.error(`Error deleting value from cache for key "${key}":`, error);
+      return false;
     }
   }
 
-  async getAfterDelete<T>(key: string): Promise<T | void> {
+  async getAfterDelete<T>(key: string): Promise<T | undefined> {
     try {
       const data = await this.cacheManager.get<T>(key);
       if (data) {
-        await this.del(key); // Ensure data is deleted if found
+        await this.del(key);
       }
-      return data; // Return data after deletion, or `undefined` if no data was found
+      return data || undefined;
     } catch (error) {
       this.logger.error(`Error getting and deleting value from cache for key "${key}":`, error);
+      return undefined;
     }
   }
 
-  async reset(): Promise<void> {
-    await this.cacheManager.reset().catch(() => this.logger.warn('Reset is failed'));
+  async reset(): Promise<boolean> {
+    try {
+      await this.cacheManager.reset();
+      return true;
+    } catch (error) {
+      this.logger.warn('Reset failed:', error);
+      return false;
+    }
+  }
+
+  generateKey(entity: string, context: string, id: string): string {
+    return `${entity}:${context}:${id}`;
   }
 }

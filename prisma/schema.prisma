@@ -56,9 +56,8 @@ model Mfa {
 
   type         MfaType  @default(NONE)
   enabled      Boolean  @default(false)
-  secret       String?  @db.Text
-  friendlyName String   @map("friendly_name") @db.Text
-  qrCodeUrl    String?  @map("qr_code_url") @db.Text
+  secret       String   @db.Text
+  friendlyName String?  @map("friendly_name") @db.Text
   backupCodes  String[] @default([]) @map("backup_codes")
 
   enabledAt DateTime? @map("enabled_at")

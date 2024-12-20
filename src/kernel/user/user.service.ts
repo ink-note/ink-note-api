@@ -3,28 +3,32 @@ import { hash, compare } from 'bcrypt';
 import * as dayjs from 'dayjs';
 
 import { PrismaService } from '@/common/services/prisma';
-import { CacheService } from '../cache/cache.service';
 import {
   CreateUserInput,
-  DeleteOneWithIdInput,
-  FindOneWithEmailInput,
-  FindOneWithIdInput,
-  UpdateOneWithDataInput,
-  UpdateOneWithIdInput,
+  DeleteOneByIdInput,
+  FindOneByEmailInput,
+  FindOneByIdInput,
+  UpdateOneByDataInput,
+  UpdateOneByIdInput,
   UserCacheOperationsOptions,
   ValidatingUserInput,
 } from './types';
-import { UserEntity } from '../types';
-import { DURATIONS } from '../constants/durations';
+import { UserEntity, UserProfile } from '../types';
+import { Pick } from '@/shared/utils/object';
+import { CacheService } from '@/common/services/cache';
+import { USER_ENTITY_CACHE_TTL } from './constants';
+import { EntityBase } from '../entity-base.service';
 
 @Injectable()
-export class UserService {
+export class UserService extends EntityBase {
   private readonly logger = new Logger(UserService.name);
 
   constructor(
     private readonly prismaService: PrismaService,
-    private readonly cacheService: CacheService,
-  ) {}
+    readonly cacheService: CacheService,
+  ) {
+    super(cacheService);
+  }
 
   async create({ firstName, lastName, password, email, ...rest }: CreateUserInput): Promise<UserEntity> {
     const fullName = `${firstName} ${lastName}`;
@@ -67,7 +71,7 @@ export class UserService {
     }
   }
 
-  public async update({ id }: UpdateOneWithIdInput, data: UpdateOneWithDataInput): Promise<boolean> {
+  public async updateOne({ id }: UpdateOneByIdInput, data: UpdateOneByDataInput): Promise<boolean> {
     const cacheKey = this.generateCacheKey(id);
 
     this.logger.log(`Starting update process for user with ID: ${id}`);
@@ -77,7 +81,7 @@ export class UserService {
 
       if (updatedUser) {
         this.logger.log(`User with ID: ${id} updated successfully. Saving updated user to cache with key: ${cacheKey}`);
-        await this.cacheService.set<UserEntity>(cacheKey, updatedUser, DURATIONS.ENTITIES.USER_ENTITY_CACHE_TTL);
+        await this.cacheService.set<UserEntity>(cacheKey, updatedUser, USER_ENTITY_CACHE_TTL);
         return true; // Indicate success
       }
 
@@ -91,7 +95,7 @@ export class UserService {
     }
   }
 
-  public async delete({ id }: DeleteOneWithIdInput): Promise<boolean> {
+  public async deleteOne({ id }: DeleteOneByIdInput): Promise<boolean> {
     const cacheKey = this.generateCacheKey(id);
 
     this.logger.log(`Starting delete process for user with ID: ${id}`);
@@ -121,119 +125,53 @@ export class UserService {
     }
   }
 
-  public async findOneWithId({ id }: FindOneWithIdInput, options: UserCacheOperationsOptions = {}) {
-    const {
-      getInCache = true,
-      saveToCache = true,
-      clearCacheBeforeGet,
-      deleteFromCacheAfterRead,
-      cacheTTL = DURATIONS.ENTITIES.USER_ENTITY_CACHE_TTL,
-    } = options;
+  public async findOneById({ id }: FindOneByIdInput, options: UserCacheOperationsOptions = {}): Promise<UserEntity | null> {
+    const currentOptions = this.processOptions({ ...options, cacheTTL: USER_ENTITY_CACHE_TTL });
 
     const cacheKey = this.generateCacheKey(id);
 
     this.logger.log(`Finding user with ID: ${id}, Cache Key: ${cacheKey}`);
 
-    if (clearCacheBeforeGet) {
-      this.logger.log(`Clearing cache before fetching user: ${cacheKey}`);
-      await this.cacheService.del(cacheKey);
-    }
+    return this.handleCache<UserEntity | null>(cacheKey, currentOptions, async () => {
+      this.logger.log(`Fetching user from database for ID: ${id}`);
+      const user = await this.prismaService.user.findUnique({ where: { id } });
 
-    if (getInCache) {
-      this.logger.log(`Checking cache for user: ${cacheKey}`);
-      const cachedUser = await this.cacheService.get<UserEntity | null>(cacheKey);
-
-      if (cachedUser) {
-        this.logger.log(`Found user in cache: ${cacheKey}`);
-
-        if (deleteFromCacheAfterRead) {
-          this.logger.log(`Deleting user from cache after reading: ${cacheKey}`);
-          await this.cacheService.del(cacheKey);
-        }
-
-        return cachedUser;
-      } else {
-        this.logger.log(`No user found in cache for: ${cacheKey}`);
+      if (!user) {
+        this.logger.warn(`User with ID: ${id} not found in database.`);
+        return null;
       }
-    }
 
-    this.logger.log(`Fetching user from database for ID: ${id}`);
-    const user = await this.prismaService.user.findUnique({ where: { id } });
-
-    if (user) {
-      this.logger.log(`User found in database. ${saveToCache ? 'Saving to cache' : 'Not saving to cache'}`);
-
-      if (saveToCache) {
-        this.logger.log(`Saving user to cache: ${cacheKey}`);
-        await this.cacheService.set(cacheKey, user, cacheTTL);
-      }
-    } else {
-      this.logger.warn(`User with ID: ${id} not found in database.`);
-    }
-
-    return user;
+      return user;
+    });
   }
 
-  public async findOneWithEmail({ email }: FindOneWithEmailInput, options: UserCacheOperationsOptions = {}) {
-    const {
-      getInCache = true,
-      saveToCache = true,
-      clearCacheBeforeGet,
-      deleteFromCacheAfterRead,
-      cacheTTL = DURATIONS.ENTITIES.USER_ENTITY_CACHE_TTL,
-    } = options;
+  public async findOneByEmail({ email }: FindOneByEmailInput, options: UserCacheOperationsOptions = {}) {
+    const currentOptions = this.processOptions({ ...options, cacheTTL: USER_ENTITY_CACHE_TTL });
 
     const cacheKey = this.generateCacheKey(email);
 
-    this.logger.log(`Finding user with Email: ${email}, Cache Key: ${cacheKey}`);
+    this.logger.log(`Finding user with email: ${email}, Cache Key: ${cacheKey}`);
 
-    if (clearCacheBeforeGet) {
-      this.logger.log(`Clearing cache before fetching user: ${cacheKey}`);
-      await this.cacheService.del(cacheKey);
-    }
+    return this.handleCache<UserEntity | null>(cacheKey, currentOptions, async () => {
+      this.logger.log(`Fetching user from database for email: ${email}`);
+      const user = await this.prismaService.user.findUnique({ where: { email } });
 
-    if (getInCache) {
-      this.logger.log(`Checking cache for user: ${cacheKey}`);
-      const cachedUser = await this.cacheService.get<UserEntity | null>(cacheKey);
-
-      if (cachedUser) {
-        this.logger.log(`Found user in cache: ${cacheKey}`);
-
-        if (deleteFromCacheAfterRead) {
-          this.logger.log(`Deleting user from cache after reading: ${cacheKey}`);
-          await this.cacheService.del(cacheKey);
-        }
-
-        return cachedUser;
-      } else {
-        this.logger.log(`No user found in cache for: ${cacheKey}`);
+      if (!user) {
+        this.logger.warn(`User with email: ${email} not found in database.`);
+        return null;
       }
-    }
 
-    this.logger.log(`Fetching user from database for Email: ${email}`);
-    const user = await this.prismaService.user.findUnique({ where: { email } });
-
-    if (user) {
-      this.logger.log(`User found in database. ${saveToCache ? 'Saving to cache' : 'Not saving to cache'}`);
-
-      if (saveToCache) {
-        this.logger.log(`Saving user to cache: ${cacheKey}`);
-        await this.cacheService.set(cacheKey, user, cacheTTL);
-      }
-    } else {
-      this.logger.warn(`User with Email: ${email} not found in database.`);
-    }
-
-    return user;
+      return user;
+    });
   }
 
-  public async validateUser({ email, password }: ValidatingUserInput): Promise<boolean> {
+  public async validate({ email, password }: ValidatingUserInput): Promise<boolean> {
     const cacheKey = this.generateCacheKey(email);
 
     this.logger.log(`Validating user with email: ${email}`);
 
     try {
-      const user = await this.findOneWithEmail({ email });
+      const user = await this.findOneByEmail({ email });
 
       if (!user) {
         this.logger.warn(`User with email: ${email} not found.`);
@@ -244,18 +182,31 @@ export class UserService {
 
       const passwordMatches = await this.decryptingPassword(user.password, password);
 
-      if (passwordMatches) {
-        this.logger.log(`Password matches for user with email: ${email}`);
-        return true;
+      if (!passwordMatches) {
+        this.logger.warn(`Password does not match for user with email: ${email}. `);
+        //TODO: await this.cacheService.del(cacheKey);
+        return false;
       }
 
-      this.logger.warn(`Password does not match for user with email: ${email}. Clearing cache.`);
-      await this.cacheService.del(cacheKey);
-      return false;
+      this.logger.log(`Password matches for user with email: ${email}`);
+      return true;
     } catch (error) {
       this.logger.error(`Error validating user with email: ${email}`, error.stack);
       throw error; // Propagate the error for handling elsewhere
     }
+  }
+
+  public prepareUserProfileData(user: UserEntity): UserProfile {
+    return Pick(user, [
+      'id',
+      'email',
+      'fullName',
+      'firstName',
+      'lastName',
+      'lastSignInAt',
+      'hasVerifiedEmailAddress',
+      'imageUrl',
+    ]);
   }
 
   private async encryptingPassword(password: string): Promise<string> {
@@ -267,6 +218,6 @@ export class UserService {
   }
 
   private generateCacheKey(id: string): string {
-    return this.cacheService.generateKey('user', 'cache', id);
+    return this.getCacheKey('user', 'cache', id);
   }
 }
