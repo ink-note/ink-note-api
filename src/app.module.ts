@@ -6,9 +6,9 @@ import { APP_GUARD } from '@nestjs/core';
 import { PassportModule } from '@nestjs/passport';
 import { PrismaModule } from './common/services/prisma';
 import { CacheModule } from './common/services/cache';
-import { KernelModule } from './kernel/kernel.module';
+import { DomainModule } from './domain/domain.module';
 import { getFingerprintConfig } from './configs/fingerprint-config';
-import { getThrottlerConfig } from './configs/throttler-config';
+import { getThrottlerConfig, RATE_LIMIT_DURATION } from './configs/throttler-config';
 import { AuthModule } from './modules/auth/auth.module';
 import { ProfileModule } from './modules/profile/profile.module';
 
@@ -22,7 +22,7 @@ import { ProfileModule } from './modules/profile/profile.module';
     ThrottlerModule.forRoot(getThrottlerConfig()),
     PrismaModule,
     CacheModule,
-    KernelModule,
+    DomainModule,
     AuthModule,
     ProfileModule,
   ],

@@ -1,12 +1,15 @@
-import { DURATIONS } from '@/common/constants/durations';
 import { ThrottlerModuleOptions } from '@nestjs/throttler';
-export const getThrottlerConfig = (config: ThrottlerModuleOptions = []): ThrottlerModuleOptions => {
+import { toMs } from 'ms-typescript';
+
+export const RATE_LIMIT_DURATION = toMs('2m');
+
+export const getThrottlerConfig = (config?: ThrottlerModuleOptions): ThrottlerModuleOptions => {
   if (config) {
     return config;
   }
   return [
     {
-      ttl: DURATIONS.RATE_LIMIT_DURATION,
+      ttl: RATE_LIMIT_DURATION,
       limit: 60,
     },
   ];

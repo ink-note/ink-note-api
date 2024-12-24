@@ -1,2 +1,3 @@
-export * from './sign-in.dto';
-export * from './sign-up.dto';
+export * from './Login-with-email.dto';
+export * from './Login-with-TOTP.dto';
+export * from './Register-with-email.dto';

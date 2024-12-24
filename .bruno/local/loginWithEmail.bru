@@ -1,0 +1,18 @@
+meta {
+  name: loginWithEmail
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{url}}/auth/loginWithEmail
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "adam@gmail.com",
+    "password": "123456aA"
+  }
+}

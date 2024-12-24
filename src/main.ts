@@ -8,7 +8,6 @@ import { SwaggerInitializer } from './configs/swagger-init';
 import { AppModule } from './app.module';
 
 import { corsDevOptions, corsProdOptions } from './configs/cors-options';
-import { ROUTES } from './common/constants/routes';
 
 async function bootstrap(): Promise<string> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -29,7 +28,7 @@ async function bootstrap(): Promise<string> {
   );
 
   if (_IS_DEV_) {
-    SwaggerInitializer(ROUTES.API.DOCS, app);
+    SwaggerInitializer('/api/docs', app);
   }
   app.enableShutdownHooks();
   await app.listen(parseInt(config.getOrThrow<string>('PORT')) || 8000);
@@ -40,7 +39,7 @@ async function bootstrap(): Promise<string> {
   try {
     const url = await bootstrap();
     Logger.log('Server started', url + '/api');
-    Logger.log('Swagger started (running only in development)', url + `${ROUTES.API.DOCS}`);
+    Logger.log('Swagger started (running only in development)', url + '/api/docs');
   } catch (error) {
     Logger.error('Server start error: ', error);
   }

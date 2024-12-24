@@ -6,6 +6,7 @@ type EnvironmentVariables = {
   // Jwt
   JWT_ACCESS_TOKEN_SECRET: string;
   JWT_SESSION_TOKEN_SECRET: string;
+  JWT_MFA_TEMPORARY_LOGIN_TOKEN_SECRET: string;
 
   // 2fa TOTP
   MFA_APP_NAME: string;

@@ -15,7 +15,7 @@ class IsBackupCodeConstraint implements ValidatorConstraintInterface {
     }
 
     // The pattern for backup codes: XXXXX-XXXXX (5 alphanumeric characters, a dash, and 5 alphanumeric characters)
-    const regex = /^[a-zA-Z0-9]{5}-[a-zA-Z0-9]{5}$/;
+    const regex = /^[a-zA-Z]{5}-[a-zA-Z]{5}$/;
     return regex.test(value);
   }
 

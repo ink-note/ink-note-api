@@ -1,0 +1,18 @@
+meta {
+  name: loginWithTOTP
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{url}}/auth/loginWithTOTP
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "mfaSettingsId": "cm52usaeo0003v1qwj76vux7z",
+    "code": "911040"
+  }
+}
